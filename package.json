@@ -1,0 +1,16 @@
+{
+  "name": "budget-sync",
+  "module": "src/main.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@hey-api/client-fetch": "^0.8.0",
+    "effect": "^3.12.9",
+    "ynab": "^2.6.0"
+  }
+}
