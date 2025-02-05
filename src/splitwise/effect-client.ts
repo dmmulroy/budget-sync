@@ -20,6 +20,28 @@ import type {
 	GetGetUserByIdResponse,
 } from "./types.gen";
 
+type EffectService = {
+	[key: string]:
+		| Effect.Effect<any, any, any>
+		| ((...args: any[]) => Effect.Effect<any, any, any>);
+};
+
+// Corrected PromiseApiFromEffectApi type with proper Success type inference
+export type PromiseServiceFromEffectService<T extends EffectService> = {
+	[K in keyof T]: T[K] extends (
+		...args: infer A
+	) => Effect.Effect<infer S, any, any>
+		? (...args: A) => Promise<PromiseSettledResult<S>>
+		: T[K] extends Effect.Effect<infer S, any, any>
+			? Promise<PromiseSettledResult<S>>
+			: never;
+};
+
+//export type DualService<T extends EffectApi> = {
+//	EffectApi: T;
+//	PromiseApi: PromiseApiFromEffectApi<T>;
+//};
+
 export declare namespace Splitwise {
 	export type Config = Readonly<{
 		apiKey: Redacted.Redacted<string>;
@@ -68,6 +90,8 @@ export declare namespace Splitwise {
 			IWrappedSplitwiseClient
 		>;
 	}>;
+
+	export type PromiseService = PromiseServiceFromEffectService<Service>;
 }
 
 export class SplitwiseClientError extends Data.TaggedError(
