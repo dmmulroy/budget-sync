@@ -26,4 +26,3 @@ export const client = createClient(
 		baseUrl: "https://secure.splitwise.com/api/v3.0",
 	}),
 );
-

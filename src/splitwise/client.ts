@@ -6,7 +6,7 @@ import {
 	getGetGroupById,
 	getGetNotifications,
 	getGetUserById,
-} from "./sdk.gen";
+} from "./codegen/sdk.gen";
 
 export type SplitwiseClientOptions = Readonly<{
 	apiKey: Redacted.Redacted<string>;

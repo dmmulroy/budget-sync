@@ -18,6 +18,9 @@
       },
     },
   },
+  "patchedDependencies": {
+    "typescript@5.7.3": "patches/typescript@5.7.3.patch",
+  },
   "packages": {
     "@hey-api/client-fetch": ["@hey-api/client-fetch@0.8.1", "", {}, "sha512-AaVNVLBl7N9Fun7QDnb00YDubAFjB9ICi5U6kmzcJSnnQTQGRMsuBBRupQV5ERdMMFt71zjSDym7Z+gLVe8m3A=="],
 

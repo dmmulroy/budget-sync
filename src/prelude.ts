@@ -161,3 +161,19 @@ export const Retry = {
 	 */
 	noRetryPolicy: Schedule.once,
 };
+
+export type EffectService = {
+	[key: string]:
+		| Effect.Effect<any, any, any>
+		| ((...args: any[]) => Effect.Effect<any, any, any>);
+};
+
+export type PromiseServiceFromEffectService<T extends EffectService> = {
+	[K in keyof T]: T[K] extends (
+		...args: infer A
+	) => Effect.Effect<infer S, any, any>
+		? (...args: A) => Promise<PromiseSettledResult<S>>
+		: T[K] extends Effect.Effect<infer S, any, any>
+			? Promise<PromiseSettledResult<S>>
+			: never;
+};

@@ -1,0 +1,13 @@
+diff --git a/lib/typescript.js b/lib/typescript.js
+index fa7c62f9a01aa8d0be1aa34bac06b2ef0b2cebeb..df786ff58770b5a06cabaabfa7a1e0acb6c42ea0 100644
+--- a/lib/typescript.js
++++ b/lib/typescript.js
+@@ -16116,7 +16116,7 @@ function isInternalDeclaration(node, sourceFile) {
+ // src/compiler/utilities.ts
+ var resolvingEmptyArray = [];
+ var externalHelpersModuleNameText = "tslib";
+-var defaultMaximumTruncationLength = 160;
++var defaultMaximumTruncationLength = 1e6;
+ var noTruncationMaximumTruncationLength = 1e6;
+ function getDeclarationOfKind(symbol, kind) {
+   const declarations = symbol.declarations;
