@@ -135,7 +135,7 @@ class WrappedSplitwiseClient extends Context.Tag("WrappedSplitwiseClient")<
 	};
 }
 
-class Splitwise extends Context.Tag("Splitwise")<
+export class Splitwise extends Context.Tag("Splitwise")<
 	Splitwise,
 	Splitwise.Service
 >() {

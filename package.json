@@ -2,7 +2,11 @@
   "name": "budget-sync",
   "module": "src/main.ts",
   "type": "module",
+  "scripts": {
+    "sst:deploy": "sst deploy"
+  },
   "devDependencies": {
+    "@types/aws-lambda": "8.10.147",
     "@types/bun": "latest",
     "@types/flat": "^5.0.5"
   },
@@ -13,6 +17,7 @@
     "@hey-api/client-fetch": "^0.8.0",
     "effect": "^3.12.9",
     "flat": "^6.0.1",
+    "sst": "3.8.2",
     "ynab": "^2.6.0"
   },
   "patchedDependencies": {

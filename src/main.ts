@@ -1,52 +1,17 @@
-import { Effect, Redacted } from "effect";
-import { SplitwiseClient } from "./splitwise/client";
-import { CurrentUserSchema } from "./splitwise/schemas";
+import { Config, Effect, Layer } from "effect";
+import { Splitwise } from "./splitwise/effect-client";
+import { Ynab } from "./ynab/client";
 
-const groupId = Number(process.env["SPLITWISE_GROUP_ID"]);
-const client = new SplitwiseClient({
-	apiKey: Redacted.make(process.env["SPLITWISE_API_KEY"] ?? ""),
+const program = Effect.gen(function* () {
+	const budgetId = yield* Config.string("YNAB_BUDGET_ID");
+	//const splitwise = yield* Splitwise;
+	const ynab = yield* Ynab;
+
+	const transactions = yield* ynab.transactions.getTransactions(budgetId);
+
+	yield* Effect.logInfo(JSON.stringify({ transactions }, null, 2));
 });
 
-const user = await client
-	.getCurrentUser()
-	.then((res) => res.data?.user)
-	.then((user) =>
-		user === undefined ? Promise.reject() : Promise.resolve(user),
-	);
+const MainLayer = Layer.empty.pipe(Layer.provideMerge(Ynab.Default));
 
-console.log({ user });
-
-const parsed = await Effect.runPromise(CurrentUserSchema.decodeToType(user));
-
-console.log({ parsed });
-
-//const results = await client
-//	.getNotifications()
-//	.then((res) => {
-//		if (res.data && res.data?.notifications) {
-//			return res.data.notifications;
-//		}
-//
-//		return Promise.reject("no notifications");
-//	})
-//	.then((notifications) => {
-//		return Promise.all(
-//			notifications.flatMap((notification) => {
-//				if (notification.type === 0 || notification.type === 1) {
-//					return [client.getExpenseById(notification.source?.id ?? 0)];
-//				}
-//				return [];
-//			}),
-//		);
-//	})
-//	.then((res) => {
-//		return res.flatMap((result) =>
-//			result.data &&
-//			result.data.expense &&
-//			result.data.expense?.group_id === groupId
-//				? [result.data.expense]
-//				: [],
-//		);
-//	});
-
-//console.log("Result: \n", JSON.stringify(results, null, 2));
+Effect.runPromise(program.pipe(Effect.provide(MainLayer)));

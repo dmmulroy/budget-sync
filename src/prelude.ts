@@ -1,5 +1,7 @@
 import { Cause, Effect, Exit, Schedule } from "effect";
 import type { Duration, DurationInput } from "effect/Duration";
+import { isError } from "effect/Predicate";
+import type { AnySpan, SpanKind, SpanLink } from "effect/Tracer";
 import { flatten } from "flat";
 
 export type UnifyIntersection<T> = {
@@ -17,39 +19,6 @@ export const effectToPromiseSettledResult = async <Success, Failure>(
 		return { status: "rejected", reason: Cause.squash(exit.cause) } as const;
 	});
 };
-
-export type InstrumentationOptions = Readonly<{
-	attributes?: Record<PropertyKey, unknown>;
-	retryPolicy?: Schedule.Schedule<unknown>;
-	rootSpan?: boolean;
-}>;
-
-export const withInstrumentation =
-	(spanName: string, options?: InstrumentationOptions) =>
-	<Success, Failure, Requirements>(
-		effect: Effect.Effect<Success, Failure, Requirements>,
-	) => {
-		const retryPolicy = options?.retryPolicy ?? Retry.noRetryPolicy;
-
-		return effect.pipe(
-			Effect.tapError((error: Failure) =>
-				Effect.zipRight(
-					Effect.logError(error),
-					Effect.annotateCurrentSpan(flatten({ error })),
-				),
-			),
-			Effect.retry(retryPolicy),
-			Effect.withSpan(
-				spanName,
-				options?.attributes
-					? {
-							root: options?.rootSpan ?? false,
-							attributes: flatten(options.attributes),
-						}
-					: undefined,
-			),
-		);
-	};
 
 /**
  * Configuration options for exponential backoff retry strategy
@@ -157,10 +126,81 @@ export const Retry = {
 	exponentialBackoffPolicy: defaultExponentialBackoffPolicy,
 
 	/**
+	 * Default  retry once policy
+	 */
+	oncePolicy: Schedule.once,
+
+	/**
 	 * Default no retry policy
 	 */
-	noRetryPolicy: Schedule.once,
+	noRetryPolicy: Schedule.stop,
 };
+
+type SpanType = "web" | "db" | "cache" | "function" | "custom";
+
+export type InstrumentationOptions = Readonly<{
+	annotateSpansWith?: Record<PropertyKey, unknown>;
+	attributes?: Record<PropertyKey, unknown>;
+	captureStackTrace?: boolean;
+	isRootSpan?: boolean;
+	annotateLogsWith?: Record<PropertyKey, unknown>;
+	retryPolicy?: Schedule.Schedule<unknown>;
+	spanKind?: SpanKind;
+	spanLinks?: ReadonlyArray<SpanLink>;
+	spanParent?: AnySpan;
+	spanType?: SpanType;
+}>;
+
+const defaultInstrumentationOptions = {
+	captureStackTrace: false,
+	isRootSpan: false,
+	retryPolicy: Retry.noRetryPolicy,
+	spanKind: "server",
+	spanType: "function",
+} as const satisfies InstrumentationOptions;
+
+export const withInstrumentation =
+	(
+		spanName: string,
+		options: InstrumentationOptions = defaultInstrumentationOptions,
+	) =>
+	<Success, Failure, Requirements>(
+		effect: Effect.Effect<Success, Failure, Requirements>,
+	) => {
+		const opts = { ...defaultInstrumentationOptions, ...options };
+
+		const logAnnotations = Object.assign(
+			{},
+			opts.annotateLogsWith,
+			opts.annotateSpansWith,
+		);
+
+		return effect.pipe(
+			Effect.tapError((error) =>
+				Effect.annotateCurrentSpan(
+					isError(error)
+						? {
+								"error.name": error.name,
+								"error.stack": error.stack,
+								"error.message": error.message,
+								"error.cause": error.cause,
+							}
+						: flatten(error),
+				),
+			),
+			Effect.retry(opts.retryPolicy),
+			Effect.annotateLogs(logAnnotations),
+			Effect.withSpan(spanName, {
+				attributes: opts.attributes,
+				captureStackTrace: opts.captureStackTrace,
+				kind: opts.spanKind,
+				links: opts.spanLinks,
+				parent: opts.spanParent,
+				root: opts.isRootSpan,
+			}),
+			Effect.annotateSpans(opts.annotateSpansWith ?? {}),
+		);
+	};
 
 export type EffectService = {
 	[key: string]:
@@ -177,3 +217,10 @@ export type PromiseServiceFromEffectService<T extends EffectService> = {
 			? Promise<PromiseSettledResult<S>>
 			: never;
 };
+
+export type WrappedService<Service, Failure> = Readonly<{
+	client: Service;
+	use: <Success>(
+		fn: (client: Service) => Promise<Success>,
+	) => Effect.Effect<Success, Failure>;
+}>;
