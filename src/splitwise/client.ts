@@ -22,6 +22,7 @@ export class SplitwiseClient {
 	private getHeaders() {
 		return {
 			Authorization: `Bearer ${Redacted.value(this.options.apiKey)}`,
+			"Content-Type": "application/json",
 		};
 	}
 

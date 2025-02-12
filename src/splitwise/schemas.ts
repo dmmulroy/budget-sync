@@ -452,15 +452,21 @@ export class GroupSchema extends GroupApiSchema {
 //14	Group currency conversion
 //15	Friend currency conversion
 
-const NotificationTypeSchema = Schema.Literal(
-	"added_as_friend",
-	"added_to_group",
-	"comment_added",
-	"debt_simplification",
+const ExpenseNotificationTypeSchema = Schema.Literal(
 	"expense_added",
 	"expense_deleted",
 	"expense_undeleted",
 	"expense_updated",
+);
+
+export type ExpenseNotificationType = typeof ExpenseNotificationTypeSchema.Type;
+
+const NotificationTypeSchema = Schema.Literal(
+	...ExpenseNotificationTypeSchema.literals,
+	"added_as_friend",
+	"added_to_group",
+	"comment_added",
+	"debt_simplification",
 	"friend_currency_conversion",
 	"group_currency_conversion",
 	"group_deleted",
