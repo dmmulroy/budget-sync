@@ -1,4 +1,5 @@
-import { Schema } from "effect";
+import { Option, ParseResult, Record, Schema } from "effect";
+import { encode } from "effect/ParseResult";
 
 const UserApiSchema = Schema.Struct({
 	id: Schema.Number,
@@ -432,3 +433,114 @@ export class GroupSchema extends GroupApiSchema {
 	static schema = GroupApiSchema;
 	static typeSchema = Schema.typeSchema(GroupApiSchema);
 }
+
+//Type	Meaning
+//0	Expense added
+//1	Expense updated
+//2	Expense deleted
+//3	Comment added
+//4	Added to group
+//5	Removed from group
+//6	Group deleted
+//7	Group settings changed
+//8	Added as friend
+//9	Removed as friend
+//10	News (a URL should be included)
+//11	Debt simplification
+//12	Group undeleted
+//13	Expense undeleted
+//14	Group currency conversion
+//15	Friend currency conversion
+
+const NotificationTypeSchema = Schema.Literal(
+	"added_as_friend",
+	"added_to_group",
+	"comment_added",
+	"debt_simplification",
+	"expense_added",
+	"expense_deleted",
+	"expense_undeleted",
+	"expense_updated",
+	"friend_currency_conversion",
+	"group_currency_conversion",
+	"group_deleted",
+	"group_settings_changed",
+	"group_undeleted",
+	"news",
+	"removed_as_friend",
+	"removed_from_group",
+);
+
+type NotificationType = typeof NotificationTypeSchema.Type;
+
+const notificationTypeMap: Record<number, NotificationType> = {
+	0: "expense_added",
+	1: "expense_updated",
+	2: "expense_deleted",
+	3: "comment_added",
+	4: "added_to_group",
+	5: "removed_from_group",
+	6: "group_deleted",
+	7: "group_settings_changed",
+	8: "added_as_friend",
+	9: "removed_as_friend",
+	10: "news",
+	11: "debt_simplification",
+	12: "group_undeleted",
+	13: "expense_undeleted",
+	14: "group_currency_conversion",
+	15: "friend_currency_conversion",
+};
+
+const notificationCodeMap: Record<NotificationType, number> = {
+	expense_added: 0,
+	expense_updated: 1,
+	expense_deleted: 2,
+	comment_added: 3,
+	added_to_group: 4,
+	removed_from_group: 5,
+	group_deleted: 6,
+	group_settings_changed: 7,
+	added_as_friend: 8,
+	removed_as_friend: 9,
+	news: 10,
+	debt_simplification: 11,
+	group_undeleted: 12,
+	expense_undeleted: 13,
+	group_currency_conversion: 14,
+	friend_currency_conversion: 15,
+};
+
+const NotificationTypeFromNumberSchema = Schema.transformOrFail(
+	Schema.Number,
+	NotificationTypeSchema,
+	{
+		strict: true,
+		decode(num: number, _, ast) {
+			const maybeNotificationType = Option.fromNullable(
+				notificationTypeMap[num],
+			);
+
+			if (Option.isNone(maybeNotificationType)) {
+				return ParseResult.fail(
+					new ParseResult.Type(
+						ast,
+						num,
+						`'${num}' is not a valid notification type`,
+					),
+				);
+			}
+
+			return ParseResult.succeed(maybeNotificationType.value);
+		},
+		encode(notificationType) {
+			return ParseResult.succeed(notificationCodeMap[notificationType]);
+		},
+	},
+);
+
+export const NotificationTypeFromNumber = {
+	schema: NotificationTypeFromNumberSchema,
+	decode: Schema.decode(NotificationTypeFromNumberSchema),
+	encode: Schema.encode(NotificationTypeFromNumberSchema),
+} as const;

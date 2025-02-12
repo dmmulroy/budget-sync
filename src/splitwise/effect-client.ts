@@ -318,25 +318,3 @@ export class Splitwise extends Context.Tag("Splitwise")<
 		Layer.provideMerge(WrappedSplitwiseClient.Default),
 	);
 }
-
-const program = Effect.gen(function* () {
-	const splitwise = yield* Splitwise;
-
-	const notifications = yield* splitwise
-		.getNotifications()
-		.pipe(
-			Effect.map(
-				Array.filter(
-					(notification) => notification.type === 1 || notification.type === 2,
-				),
-			),
-		);
-
-	const expenses = yield* Effect.forEach(notifications, (notification) =>
-		splitwise.getExpenseById(notification.source?.id ?? 0),
-	);
-
-	yield* Effect.log({ expenses });
-}).pipe(Effect.provide(Splitwise.Default));
-
-Effect.runPromise(program).then(console.log, console.error);

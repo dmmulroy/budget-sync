@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Schedule } from "effect";
+import { Cause, DateTime, Effect, Exit, Schedule } from "effect";
 import type { Duration, DurationInput } from "effect/Duration";
 import { isError } from "effect/Predicate";
 import type { AnySpan, SpanKind, SpanLink } from "effect/Tracer";
@@ -224,3 +224,9 @@ export type WrappedService<Service, Failure> = Readonly<{
 		fn: (client: Service) => Promise<Success>,
 	) => Effect.Effect<Success, Failure>;
 }>;
+
+export const formatDateSk = DateTime.format({
+	year: "numeric",
+	month: "2-digit",
+	day: "2-digit",
+});
