@@ -1,39 +1,43 @@
-import { CustomAttributeType, Entity } from "electrodb";
+import { Entity } from "electrodb";
 import { formatDateSk } from "../prelude";
 
-export const SyncedTransactionEntity = new Entity({
+export const BudgetSyncAccountEntity = new Entity({
 	model: {
-		entity: "synced_transaction",
+		entity: "budget_sync_account",
 		version: "1",
 		service: "budget_sync",
 	},
 	attributes: {
+		// TODO Brand
+		id: {
+			type: "string",
+			required: true,
+		},
+
 		budgetSyncAccountId: {
 			type: "string",
-			required: true,
+			watch: ["id"],
+			hidden: true,
+			get: (_, { id }) => id,
+			set: () => undefined,
 		},
 
-		amount: {
+		splitwiseGroupId: {
 			type: "number",
 			required: true,
 		},
 
-		description: {
+		splitwiseUserId: {
+			type: "number",
+			required: true,
+		},
+
+		ynabBudgetId: {
 			type: "string",
 			required: true,
 		},
 
-		type: {
-			type: CustomAttributeType<"credit" | "debit">("string"),
-			required: true,
-		},
-
-		splitwiseExpenseId: {
-			type: "number",
-			required: true,
-		},
-
-		ynabTransactionId: {
+		ynabAccountId: {
 			type: "string",
 			required: true,
 		},
@@ -67,7 +71,19 @@ export const SyncedTransactionEntity = new Entity({
 	},
 
 	indexes: {
-		syncedTransaction: {
+		budgetSyncAccount: {
+			pk: {
+				field: "pk",
+				composite: ["id"],
+			},
+			sk: {
+				field: "sk",
+				composite: [],
+			},
+		},
+
+		byBudgetSyncAccountId: {
+			index: "gsi1",
 			collection: "budgetSyncAccount",
 			type: "clustered",
 			pk: {
@@ -76,31 +92,7 @@ export const SyncedTransactionEntity = new Entity({
 			},
 			sk: {
 				field: "sk",
-				composite: ["type", "createdAtSk"],
-			},
-		},
-
-		bySplitwiseExpenseId: {
-			index: "gsi1",
-			pk: {
-				field: "gsi1pk",
-				composite: ["splitwiseExpenseId"],
-			},
-			sk: {
-				field: "gsi1sk",
-				composite: ["type", "createdAtSk"],
-			},
-		},
-
-		byYnabTransactionId: {
-			index: "gsi2",
-			pk: {
-				field: "gsi2pk",
-				composite: ["ynabTransactionId"],
-			},
-			sk: {
-				field: "gsi2sk",
-				composite: ["type", "createdAtSk"],
+				composite: [],
 			},
 		},
 	},

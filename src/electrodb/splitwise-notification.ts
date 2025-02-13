@@ -1,9 +1,10 @@
 import { CustomAttributeType, Entity } from "electrodb";
 import { formatDateSk } from "../prelude";
+import type { ExpenseNotificationType } from "../splitwise/schemas";
 
-export const YnabTransactionEntity = new Entity({
+export const SplitwiseNotificationEntity = new Entity({
 	model: {
-		entity: "ynab_transaction",
+		entity: "splitwise_notification",
 		version: "1",
 		service: "budget_sync",
 	},
@@ -14,52 +15,33 @@ export const YnabTransactionEntity = new Entity({
 		},
 
 		type: {
-			type: CustomAttributeType<"credit" | "debit">("string"),
+			type: CustomAttributeType<ExpenseNotificationType>("string"),
 			required: true,
 		},
 
-		amount: {
+		status: {
+			type: CustomAttributeType<"new" | "locked" | "completed" | "error">(
+				"string",
+			),
+			required: true,
+		},
+
+		expenseId: {
 			type: "number",
 			required: true,
 		},
 
-		accountId: {
-			type: "string",
+		createdByUserId: {
+			type: "number",
 			required: true,
 		},
 
-		accountName: {
+		content: {
 			type: "string",
-			required: true,
 		},
 
-		transactionId: {
-			type: "string",
-			required: true,
-		},
-
-		budgetId: {
-			type: "string",
-			required: true,
-		},
-
-		categoryId: {
-			type: "string",
-			required: true,
-		},
-
-		categoryName: {
-			type: "string",
-			required: true,
-		},
-
-		payeeId: {
-			type: "string",
-			required: true,
-		},
-
-		payeeName: {
-			type: "string",
+		groupId: {
+			type: "number",
 			required: true,
 		},
 
@@ -92,7 +74,7 @@ export const YnabTransactionEntity = new Entity({
 	},
 
 	indexes: {
-		ynabTransaction: {
+		splitwiseExpense: {
 			collection: "budgetSyncAccount",
 			type: "clustered",
 			pk: {
@@ -101,30 +83,18 @@ export const YnabTransactionEntity = new Entity({
 			},
 			sk: {
 				field: "sk",
-				composite: ["type", "createdAtSk"],
+				composite: ["groupId", "createdAtSk"],
 			},
 		},
 
-		byPayeeId: {
-			index: "gsi1",
+		byExpenseId: {
+			index: "gs1",
 			pk: {
 				field: "gsi1pk",
-				composite: ["payeeId"],
+				composite: ["expenseId"],
 			},
 			sk: {
 				field: "gsi1sk",
-				composite: ["createdAtSk"],
-			},
-		},
-
-		byCategoryId: {
-			index: "gsi2",
-			pk: {
-				field: "gsi2pk",
-				composite: ["categoryId"],
-			},
-			sk: {
-				field: "gsi2sk",
 				composite: ["createdAtSk"],
 			},
 		},

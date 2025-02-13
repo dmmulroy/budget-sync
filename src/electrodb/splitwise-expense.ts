@@ -67,6 +67,14 @@ export const SplitwiseExpenseEntity = new Entity({
 			type: "string",
 		},
 
+		relatedNotificationIds: {
+			type: "list",
+			items: {
+				type: "number",
+			},
+			required: true,
+		},
+
 		createdAt: {
 			type: "string",
 			readOnly: true,
@@ -97,7 +105,7 @@ export const SplitwiseExpenseEntity = new Entity({
 
 	indexes: {
 		splitwiseExpense: {
-			collection: "transactions",
+			collection: "budgetSyncAccount",
 			type: "clustered",
 			pk: {
 				field: "pk",

@@ -1,4 +1,4 @@
-import { Array as Arr, Config, Effect, Layer, Option } from "effect";
+import { Array as Arr, Config, Effect, Either, Layer, Option } from "effect";
 import { Ynab } from "./ynab/client";
 import { Splitwise, SplitwiseClientError } from "./splitwise/effect-client";
 import { ElectroDb } from "./electrodb/service";
@@ -19,9 +19,6 @@ const MainLayer = Layer.empty.pipe(
 
 const program = Effect.gen(function* () {
 	const groupId = yield* Config.number("SPLITWISE_GROUP_ID");
-	//const budgetId = yield* Config.string("YNAB_BUDGET_ID");
-	//const splitwise = yield* Splitwise;
-	//const ynab = yield* Ynab;
 	yield* getSplitwiseExpensesByGroupId(groupId);
 });
 
@@ -75,27 +72,54 @@ function getSplitwiseExpenseByDescriptor(
 	});
 }
 
+type SyncInput = Readonly<{
+	splitwiseGroupId: number;
+	splitwiseUserId: number;
+	ynabBudgetId: string;
+	ynabAccountId: string;
+}>;
+
+// For Created Expense
+// 1. Create DDB entities for Splitwise Notification, Splitwise Expense, SyncedTransaction, Ynab Transaction
+// 2. Post a YNAB Transaction
+// 3. Commit DDB entities
+
 function syncExpense(expense: SplitwiseExpenseWithNotificationType) {
 	return Effect.gen(function* () {
 		const ynab = yield* Ynab;
 		const budgetId = yield* Config.string("YNAB_BUDGET_ID");
 
-		const user = yield* Option.fromNullable(
-			expense.users.find((user) => user.userId === 1696849),
+		if (expense.users.length > 2) {
+			// todo make a better error
+			return yield* Effect.die(new Error("more than two splits in splitwse"));
+		}
+
+		const [[payee], [user]] = Arr.partition(
+			expense.users,
+			(user) => user.userId === 1696849,
 		);
+
+		const payeeFirstName = payee.user?.firstName ?? "unknown";
+		const payeeLastName = payee.user?.lastName ?? "";
+		const payeeName = `${payeeFirstName} ${payeeLastName}`.trim();
 
 		return yield* ynab.transactions.createTransactions(budgetId, {
 			transaction: {
 				account_id: "4bdb304a-55c9-4742-8c1b-f9c39994e46b",
-				amount: centsToMiliunits(Number(user.owedShare) * 100),
+				amount: dollarsToMilliunits(Number(user.netBalance)),
 				date: expense.updatedAt,
 				memo: `${expense.description} | SWID:${expense.id}`,
+				payee_name: payeeName,
 			},
 		});
 	});
 }
 
-function centsToMiliunits(amount: number): number {
+function dollarsToMilliunits(amount: number) {
+	return centsToMilliunits(amount * 100);
+}
+
+function centsToMilliunits(amount: number): number {
 	return round(amount * 10);
 }
 
@@ -124,16 +148,13 @@ function makeTryToExpenseDescriptor(groupId: number) {
 		type,
 		source,
 	}: Notification): Effect.Effect<Option.Option<SplitwiseExpenseDescriptor>> {
-		// @ts-expect-error testing
 		return NotificationTypeFromNumber.decode(type).pipe(
 			Effect.map((notificationType) => {
 				if (
-					notificationType ||
-					"expense_added"
-					//notificationType === "expense_added" ||
-					//notificationType === "expense_updated" ||
-					//notificationType === "expense_deleted" ||
-					//notificationType === "expense_undeleted"
+					notificationType === "expense_added" ||
+					notificationType === "expense_updated" ||
+					notificationType === "expense_deleted" ||
+					notificationType === "expense_undeleted"
 				) {
 					return Option.fromNullable(source?.id).pipe(
 						Option.map((expenseId) => ({

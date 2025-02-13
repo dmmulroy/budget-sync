@@ -283,6 +283,26 @@ export class SourceSchema extends SourceApiSchema {
 	static typeSchema = Schema.typeSchema(SourceApiSchema);
 }
 
+const NotificationContentSchema = Schema.transformOrFail(
+	Schema.String,
+	Schema.String,
+	{
+		strict: true,
+		encode(decoded, _, ast) {
+			return ParseResult.fail(
+				new ParseResult.Forbidden(
+					ast,
+					decoded,
+					"Encoding Notification Content is forbidden",
+				),
+			);
+		},
+		decode(encoded) {
+			return ParseResult.succeed(decodeAndStripHtml(encoded));
+		},
+	},
+);
+
 const NotificationApiSchema = Schema.Struct({
 	id: Schema.Number,
 	type: Schema.Number,
@@ -291,7 +311,7 @@ const NotificationApiSchema = Schema.Struct({
 	source: SourceApiSchema, // Object or null
 	image_url: Schema.String,
 	image_shape: Schema.Literal("square", "circle"),
-	content: Schema.String,
+	content: NotificationContentSchema,
 }).pipe(
 	Schema.rename({
 		created_at: "createdAt",
@@ -434,24 +454,6 @@ export class GroupSchema extends GroupApiSchema {
 	static typeSchema = Schema.typeSchema(GroupApiSchema);
 }
 
-//Type	Meaning
-//0	Expense added
-//1	Expense updated
-//2	Expense deleted
-//3	Comment added
-//4	Added to group
-//5	Removed from group
-//6	Group deleted
-//7	Group settings changed
-//8	Added as friend
-//9	Removed as friend
-//10	News (a URL should be included)
-//11	Debt simplification
-//12	Group undeleted
-//13	Expense undeleted
-//14	Group currency conversion
-//15	Friend currency conversion
-
 const ExpenseNotificationTypeSchema = Schema.Literal(
 	"expense_added",
 	"expense_deleted",
@@ -550,3 +552,34 @@ export const NotificationTypeFromNumber = {
 	decode: Schema.decode(NotificationTypeFromNumberSchema),
 	encode: Schema.encode(NotificationTypeFromNumberSchema),
 } as const;
+
+function decodeAndStripHtml(input: string): string {
+	/**
+	 * Regex explanation:
+	 * \\u     : Matches the literal string "\u"
+	 * [\dA-F] : Matches any digit (0-9) or letter A-F (case insensitive)
+	 * {4}     : Exactly 4 occurrences of the previous character set
+	 * /gi     : Global flag (g) to replace all occurrences, case-insensitive flag (i)
+	 * Remove the "\u" prefix and parse the hexadecimal value
+	 */
+	const decodedString = input.replace(/\\u[\dA-F]{4}/gi, (match) => {
+		/**
+		 * Regex explanation:
+		 * \\u    : Matches the literal string "\u"
+		 * /g     : Global flag to replace all occurrences
+		 */
+		return String.fromCharCode(parseInt(match.replace(/\\u/g, ""), 16));
+	});
+
+	/**
+	 * Regex explanation:
+	 * <    : Matches the opening angle bracket of an HTML tag
+	 * [^>] : Matches any character that is not a closing angle bracket
+	 * +    : One or more occurrences of the previous character set
+	 * >    : Matches the closing angle bracket of an HTML tag
+	 * /g   : Global flag to replace all occurrences
+	 */
+	const strippedString = decodedString.replace(/<[^>]+>/g, "");
+
+	return strippedString;
+}

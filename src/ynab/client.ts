@@ -131,6 +131,7 @@ class WrappedYnabClient extends Context.Tag("WrappedYnabClient")<
 		});
 	};
 }
+
 export class Ynab extends Context.Tag("YnabService")<Ynab, Ynab.Service>() {
 	static defaultConfig = {
 		apiKey: Config.redacted("YNAB_API_KEY"),
