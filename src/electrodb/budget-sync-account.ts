@@ -1,5 +1,11 @@
-import { Entity } from "electrodb";
+import {
+	CustomAttributeType,
+	Entity,
+	type CreateEntityItem,
+	type EntityRecord,
+} from "electrodb";
 import { formatDateSk } from "../prelude";
+import { ulid } from "ulid";
 
 export const BudgetSyncAccountEntity = new Entity({
 	model: {
@@ -8,17 +14,20 @@ export const BudgetSyncAccountEntity = new Entity({
 		service: "budget_sync",
 	},
 	attributes: {
-		// TODO Brand
-		id: {
-			type: "string",
-			required: true,
-		},
-
 		budgetSyncAccountId: {
 			type: "string",
-			watch: ["id"],
 			hidden: true,
-			get: (_, { id }) => id,
+			default: () => ulid(),
+			required: true,
+			readOnly: true,
+		},
+
+		id: {
+			type: "string",
+			watch: ["budgetSyncAccountId"],
+			required: false,
+			default: () => "",
+			get: (_, { budgetSyncAccountId }) => budgetSyncAccountId,
 			set: () => undefined,
 		},
 
@@ -43,47 +52,39 @@ export const BudgetSyncAccountEntity = new Entity({
 		},
 
 		createdAt: {
-			type: "string",
+			type: CustomAttributeType<Date>("any"),
 			readOnly: true,
-			required: true,
-			default: () => new Date().toISOString(),
-			set: () => new Date().toISOString(),
+			default: () => new Date(),
+			set: (_: unknown, { createdAt }: { createdAt: Date }) =>
+				createdAt.toISOString(),
+			get: (_: unknown, { createdAt }: { createdAt: string }) =>
+				new Date(createdAt),
 		},
 
 		createdAtSk: {
 			type: "string",
-			hidden: true,
 			watch: ["createdAt"],
-			required: true,
-			readOnly: true,
-			set: (_, { createdAt }) => {
-				return formatDateSk(createdAt);
+			hidden: true,
+			required: false,
+			set: (_, { createdAt }: { createdAt: string }) => {
+				return formatDateSk.format(new Date(createdAt));
 			},
+			default: () => new Date().toISOString(),
 		},
 
 		updatedAt: {
-			type: "string",
+			type: CustomAttributeType<Date>("any"),
 			watch: "*",
-			required: true,
-			default: () => new Date().toISOString(),
-			set: () => new Date().toISOString(),
+			default: () => new Date(),
+			set: (_: unknown, { createdAt }: { createdAt: Date }) =>
+				createdAt.toISOString(),
+			get: (_: unknown, { createdAt }: { createdAt: string }) =>
+				new Date(createdAt),
 		},
 	},
 
 	indexes: {
 		budgetSyncAccount: {
-			pk: {
-				field: "pk",
-				composite: ["id"],
-			},
-			sk: {
-				field: "sk",
-				composite: [],
-			},
-		},
-
-		byBudgetSyncAccountId: {
-			index: "gsi1",
 			collection: "budgetSyncAccount",
 			type: "clustered",
 			pk: {
@@ -97,3 +98,7 @@ export const BudgetSyncAccountEntity = new Entity({
 		},
 	},
 });
+
+type BudgetSyncAccount = EntityRecord<typeof BudgetSyncAccountEntity>;
+type CreateBudgetSyncAccount = CreateEntityItem<typeof BudgetSyncAccountEntity>;
+declare const foo: CreateBudgetSyncAccount;

@@ -7,19 +7,20 @@
   },
   "devDependencies": {
     "@types/aws-lambda": "8.10.147",
-    "@types/bun": "latest",
+    "@types/bun": "^1.2.2",
     "@types/flat": "^5.0.5"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5.7.3"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.744.0",
     "@aws-sdk/lib-dynamodb": "^3.744.0",
-    "@hey-api/client-fetch": "^0.8.0",
-    "effect": "^3.12.9",
-    "electrodb": "^3.1.0",
+    "@hey-api/client-fetch": "^0.8.1",
+    "effect": "^3.13.0",
+    "electrodb": "^3.4.0",
     "flat": "^6.0.1",
+    "ulid": "^2.3.0",
     "ynab": "^2.6.0"
   },
   "patchedDependencies": {

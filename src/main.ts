@@ -1,7 +1,7 @@
 import { Array as Arr, Config, Effect, Either, Layer, Option } from "effect";
 import { Ynab } from "./ynab/client";
 import { Splitwise, SplitwiseClientError } from "./splitwise/effect-client";
-import { ElectroDb } from "./electrodb/service";
+import { BudgetSyncElectroDb, ElectroDb } from "./electrodb/service";
 import {
 	NotificationTypeFromNumber,
 	type Expense,
@@ -10,19 +10,7 @@ import {
 } from "./splitwise/schemas";
 import type { UnifyIntersection } from "./prelude";
 import type { ParseError } from "effect/ParseResult";
-
-const MainLayer = Layer.empty.pipe(
-	Layer.provideMerge(Ynab.Default),
-	Layer.provideMerge(Splitwise.Default),
-	Layer.provideMerge(ElectroDb.Default),
-);
-
-const program = Effect.gen(function* () {
-	const groupId = yield* Config.number("SPLITWISE_GROUP_ID");
-	yield* getSplitwiseExpensesByGroupId(groupId);
-});
-
-Effect.runPromise(program.pipe(Effect.provide(MainLayer)));
+import { ulid } from "ulid";
 
 const getSplitwiseExpensesByGroupId = (groupId: number) =>
 	Effect.gen(function* () {
@@ -170,3 +158,36 @@ function makeTryToExpenseDescriptor(groupId: number) {
 		);
 	};
 }
+
+const MainLayer = Layer.empty.pipe(
+	Layer.provideMerge(Ynab.Default),
+	Layer.provideMerge(Splitwise.Default),
+	Layer.provideMerge(BudgetSyncElectroDb.Default),
+	Layer.provideMerge(ElectroDb.Default),
+);
+
+const program = Effect.gen(function* () {
+	const db = yield* ElectroDb;
+	const { splitwiseGroupId, splitwiseUserId, ynabBudgetId, ynabAccountId } =
+		yield* Config.all({
+			splitwiseGroupId: Config.number("SPLITWISE_GROUP_ID"),
+			splitwiseUserId: Config.number("SPLITWISE_USER_ID"),
+			ynabBudgetId: Config.string("YNAB_BUDGET_ID"),
+			ynabAccountId: Config.string("YNAB_ACCOUNT_ID"),
+		});
+
+	const { data: account } = yield* db.use(async (client) =>
+		client.entities.budgetSyncAccount
+			.create({
+				splitwiseGroupId,
+				splitwiseUserId,
+				ynabBudgetId,
+				ynabAccountId,
+			})
+			.go(),
+	);
+
+	yield* Effect.log({ account });
+});
+
+Effect.runPromise(program.pipe(Effect.provide(MainLayer)));

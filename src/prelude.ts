@@ -225,7 +225,7 @@ export type WrappedService<Service, Failure> = Readonly<{
 	) => Effect.Effect<Success, Failure>;
 }>;
 
-export const formatDateSk = DateTime.format({
+export const formatDateSk = new Intl.DateTimeFormat(undefined, {
 	year: "numeric",
 	month: "2-digit",
 	day: "2-digit",
