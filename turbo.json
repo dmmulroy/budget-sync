@@ -1,0 +1,32 @@
+{
+	"$schema": "https://turborepo.com/schema.json",
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build"],
+			"outputs": [".next/**", "!.next/cache/**"],
+			"env": [
+				"AWS_ACCESS_KEY_ID",
+				"AWS_REGION",
+				"AWS_SECRET_ACCESS_KEY",
+				"AWS_SESSION_TOKEN",
+				"AXIOM_API_TOKEN",
+				"CRON_SECRET",
+				"SPLITWISE_API_KEY",
+				"YNAB_API_KEY"
+			]
+		},
+		"lint": {
+			"dependsOn": ["^lint"]
+		},
+		"lint:check": {
+			"dependsOn": ["^lint:check"]
+		},
+		"lint:unsafe": {
+			"dependsOn": ["^lint:check"]
+		},
+		"dev": {
+			"persistent": true,
+			"cache": false
+		}
+	}
+}

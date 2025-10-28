@@ -1,0 +1,28 @@
+{
+	"name": "@budget-sync/managed-runtime",
+	"version": "0.0.0",
+	"type": "module",
+	"module": "src/budget-sync/index.ts",
+	"exports": {
+		".": "./src/runtime.ts"
+	},
+	"scripts": {
+		"lint": "biome check --write",
+		"lint:check": "biome check",
+		"lint:unsafe": "biome check --write --unsafe"
+	},
+	"dependencies": {
+		"@effect/opentelemetry": "^0.48.3",
+		"@opentelemetry/exporter-trace-otlp-http": "^0.201.0",
+		"@opentelemetry/sdk-trace-node": "^2.0.1",
+		"@opentelemetry/sdk-trace-web": "^2.0.1",
+		"effect": "^3.15.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@effect/language-service": "^0.16.1"
+	},
+	"peerDependencies": {
+		"typescript": "^5.8.3"
+	}
+}

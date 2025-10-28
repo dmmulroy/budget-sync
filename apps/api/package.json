@@ -1,0 +1,25 @@
+{
+  "name": "@budget-sync/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome check --write",
+    "lint:check": "biome check",
+    "lint:unsafe": "biome check --write --unsafe"
+  },
+  "dependencies": {
+    "@budget-sync/client": "^0.0.0",
+    "@budget-sync/managed-runtime": "^0.0.0",
+    "effect": "^3.15.4",
+    "next": "15.3.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}
